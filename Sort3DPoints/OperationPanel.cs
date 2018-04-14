@@ -23,6 +23,7 @@ namespace Sort3DPoints
         // 所选的输入图层
         private IFeatureLayer surplusLayer = null;
         private IFeatureLayer remainLayer = null;
+        private CalcMethod calcMethod = CalcMethod.Null;
 
         #region 自动生成
 
@@ -117,6 +118,45 @@ namespace Sort3DPoints
                 listBox_Surplus.Items.Clear();
             }
         }
+        
+        /// <summary>
+        /// 创建默认Shape字段
+        /// </summary>
+        /// <param name="geometryType"></param>
+        /// <returns></returns>
+        private IField CreateGeometryField(string geometryType)
+        {
+            // 创建几何定义
+            IGeometryDef geometryDef = new GeometryDef();
+            IGeometryDefEdit geometryDefEdit = geometryDef as IGeometryDefEdit;
+            
+            geometryDefEdit.HasM_2 = false;
+            geometryDefEdit.HasZ_2 = true;
+
+            // 赋予几何类型
+            switch (geometryType)
+            {
+                case "Point":
+                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPoint;
+                    break;
+                case "Polyline":
+                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolyline;
+                    break;
+                case "Polygon":
+                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolygon;
+                    break;
+            }
+
+
+            // 创建字段
+            IField geometryField = new Field();
+            IFieldEdit geometryFieldEdit = geometryField as IFieldEdit;
+            geometryFieldEdit.Name_2 = "Shape";// 字段名按惯例叫Shape即可，与CreateFeatureClass中必须一致
+            geometryFieldEdit.Type_2 = esriFieldType.esriFieldTypeGeometry;// 字段类型Geometry
+            geometryFieldEdit.GeometryDef_2 = geometryDef;
+
+            return geometryField;
+        }
 
         /// <summary>
         /// 读取FocusMap的所有图层 -- Carto类库
@@ -160,7 +200,6 @@ namespace Sort3DPoints
 
         /// <summary>
         /// 当选择列表改变时，指向当前列表选择的名字相同的图层
-        /// -- 疑问：上面改变SelectedIndex，这里会报错
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -178,7 +217,6 @@ namespace Sort3DPoints
             // MessageBox.Show(nowLayer.Name + Environment.NewLine + (nowLayer as IFeatureLayer).FeatureClass.FeatureType.ToString());
             //
         }
-
         private void listBox_Remain_SelectedIndexChanged(object sender, EventArgs e)
         {
             string name = this.listBox_Remain.SelectedItem.ToString();
@@ -198,22 +236,36 @@ namespace Sort3DPoints
             if (this.surplusLayer != null && this.remainLayer != null)
             {
                 //获取两个基本的List<IPoint>
+                // 计时器启动
+                t.Start();
                 this.dp.SurplusPoints = this.dp.FeatureLayerToList(surplusLayer);
                 this.dp.RemainPoints = this.dp.FeatureLayerToList(remainLayer);
+                progressBar.Value = 30;
                 try
                 {
                     ITin theTin = dp.CreateFirstTin(dp.SurplusPoints, surplusLayer.AreaOfInterest);
-                    progressBar.Value = 2;
-                    // 计时器启动
-                    t.Start();
+                    progressBar.Value = 31;
+                    this.textBox_Infowindow.Text = "转换数据并构造初始Tin成功" + Environment.NewLine + " --耗时：" + t.Elapsed.TotalSeconds.ToString() + ",进入排序...";
                     while(this.dp.RemainPoints.Count != 0)
                     {
                         // - 处理逻辑
                         // 1. 先找一次最大值点
-                        IPoint pointNext = dp.CalcHeightOnce(theTin, dp.RemainPoints);
-                        // 允许替换为
-                        //IPoint pointNext = dp.CalcVolumeOnce(theTin, dp.RemainPoints);
-                        //IPoint pointNext = dp.CalcDistanceOnce(theTin, dp.RemainPoints);
+                        IPoint pointNext = null;
+                        switch (this.calcMethod)
+                        {
+                            case CalcMethod.Null:
+                            case CalcMethod.Elevation:
+                                pointNext = dp.CalcElevationOnce(theTin, dp.RemainPoints);
+                                break;
+                            case CalcMethod.Distance:
+                                pointNext = dp.CalcDistanceOnce(theTin, dp.RemainPoints);
+                                break;
+                            case CalcMethod.Volume:
+                                pointNext = dp.CalcVolumeOnce(theTin, dp.RemainPoints);
+                                break;
+                            default:
+                                break;
+                        }
                         // 2. 然后加该点到SurplusPoints里
                         dp.SurplusPoints.Add(pointNext);
                         // 3. 然后删除从RemainPoints里删除该点，并重构Tin
@@ -221,8 +273,9 @@ namespace Sort3DPoints
                         dp.RemainPoints.Remove(pointNext);
                         // 4. 单次循环结束，进行下一次循环，检查RemainPoints.Count == 0
                     }
-                    this.progressBar.Value = 50;
+                    progressBar.Value =  74;
                     // 循环结束，输出List为IFeatureClass
+                    this.textBox_Infowindow.Text += Environment.NewLine + "排序完成"+Environment.NewLine+" --当前耗时：" + t.Elapsed.TotalSeconds.ToString() + ",进入下一步...";
                     dp.ListToFeatureClass(dp.SurplusPoints, "SortResult" ,dp.SurplusPoints.Count);
                 }
                 catch(Exception exception)
@@ -237,8 +290,9 @@ namespace Sort3DPoints
             // 计时器停止
             progressBar.Value = 100;
             t.Stop();
-            this.textBox_Infowindow.Text = 
-                "点数：" + dp.SurplusPoints.Count.ToString() 
+            this.textBox_Infowindow.Text +=
+                Environment.NewLine+
+                "总排序点数：" + dp.SurplusPoints.Count.ToString() 
                 + Environment.NewLine +
                 "用时(秒): " + t.Elapsed.TotalSeconds.ToString();
         }
@@ -248,54 +302,18 @@ namespace Sort3DPoints
             // 先解绑定事件
             listBox_Surplus.SelectedIndexChanged -= listBox_Surplus_SelectedIndexChanged;
             listBox_Remain.SelectedIndexChanged -= listBox_Remain_SelectedIndexChanged;
-            // 然后踢清除选择
+            // 然后清除选择
             ClearList();
             surplusLayer = null;
             remainLayer = null;
+            dp.SurplusPoints.Clear();
+            dp.RemainPoints.Clear();
+            dp.OrderByElevation.Clear();
+            dp.OrderByDistance.Clear();
+            dp.OrderByVolume.Clear();
             // 然后添加绑定
             listBox_Surplus.SelectedIndexChanged += listBox_Surplus_SelectedIndexChanged;
             listBox_Remain.SelectedIndexChanged += listBox_Remain_SelectedIndexChanged;
-        }
-
-        
-        /// <summary>
-        /// 根据给定文本信息（几何类型）创建几何字段
-        /// </summary>
-        /// <param name="projection"></param>
-        /// <param name="geometryType"></param>
-        /// <returns></returns>
-        private IField CreateGeometryField(string geometryType)
-        {
-            // 创建几何定义
-            IGeometryDef geometryDef = new GeometryDef();
-            IGeometryDefEdit geometryDefEdit = geometryDef as IGeometryDefEdit;
-            
-            geometryDefEdit.HasM_2 = false;
-            geometryDefEdit.HasZ_2 = true;
-
-            // 赋予几何类型
-            switch (geometryType)
-            {
-                case "Point":
-                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPoint;
-                    break;
-                case "Polyline":
-                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolyline;
-                    break;
-                case "Polygon":
-                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolygon;
-                    break;
-            }
-
-
-            // 创建字段
-            IField geometryField = new Field();
-            IFieldEdit geometryFieldEdit = geometryField as IFieldEdit;
-            geometryFieldEdit.Name_2 = "Shape";// 字段名按惯例叫Shape即可，与CreateFeatureClass中必须一致
-            geometryFieldEdit.Type_2 = esriFieldType.esriFieldTypeGeometry;// 字段类型Geometry
-            geometryFieldEdit.GeometryDef_2 = geometryDef;
-
-            return geometryField;
         }
 
         private void Btn_GetNPoints_Click(object sender, EventArgs e)
@@ -310,5 +328,22 @@ namespace Sort3DPoints
                 dp.ListToFeatureClass(dp.SurplusPoints, "HeadFirst" + pointsNum.ToString(), pointsNum);
         }
 
+        private void radioBtn_Elevation_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioBtn_Elevation.Checked)
+                calcMethod = CalcMethod.Elevation;
+        }
+
+        private void radioBtn_Distance_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioBtn_Distance.Checked)
+                calcMethod = CalcMethod.Distance;
+        }
+
+        private void radioBtn_Volume_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioBtn_Volume.Checked)
+                calcMethod = CalcMethod.Volume;
+        }
     }
 }

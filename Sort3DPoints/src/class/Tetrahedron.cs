@@ -12,13 +12,9 @@ namespace Sort3DPoints
     {
         #region 私有变量
 
-            /// <summary>
-            /// 顶点
-            /// </summary>
+            // 顶点
             private IPoint nodeTop = null;
-            /// <summary>
-            /// 底面
-            /// </summary>
+            // 底面
             private ITinTriangle floor = null;
 
             // 四面体体积
@@ -67,7 +63,7 @@ namespace Sort3DPoints
             {
                 get
                 {
-                    this.volume = area3D * height;
+                    this.volume = Area3D * Height;
                     return volume;
                 }
             }

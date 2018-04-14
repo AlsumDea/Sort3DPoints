@@ -19,7 +19,7 @@ namespace Sort3DPoints
         // 剩余点集，全部点 - 凸壳初始点集
         private List<IPoint> remainPoints = null;
         // 中间排序用的排序依据点集
-        private List<double> orderByHeight = null; //点到Tin表面的高差
+        private List<double> orderByElevation = null; //点到Tin表面的高差
         private List<double> orderByVolume = null; //点到Tin表面三角形的四面体的体积
         private List<double> orderByDistance = null; //点到Tin表面三角形的距离
 
@@ -28,7 +28,7 @@ namespace Sort3DPoints
         {
             surplusPoints = new List<IPoint>();
             remainPoints = new List<IPoint>();
-            orderByHeight = new List<double>();
+            orderByElevation = new List<double>();
             orderByVolume = new List<double>();
             orderByDistance = new List<double>();
         }
@@ -66,12 +66,12 @@ namespace Sort3DPoints
         {
             get
             {
-                return orderByHeight;
+                return orderByDistance;
             }
 
             set
             {
-                orderByHeight = value;
+                orderByDistance = value;
             }
         }
 
@@ -88,16 +88,16 @@ namespace Sort3DPoints
             }
         }
 
-        public List<double> OrderByHeight
+        public List<double> OrderByElevation
         {
             get
             {
-                return orderByDistance;
+                return orderByElevation;
             }
 
             set
             {
-                orderByDistance = value;
+                orderByElevation = value;
             }
         }
         #endregion
@@ -118,21 +118,11 @@ namespace Sort3DPoints
             // -- 图层较少，暂时不用IEnumLayer来遍历
             for (int i = 0; i < map.LayerCount; i++)
             {
+                // 用Equals，比较快
                 if (map.Layer[i].Name.Equals(layerName))
                     layer = map.Layer[i];
             }
             return layer;
-        }
-
-        /// <summary>
-        /// 根据图层ID选择图层，在Map中，最底下的是0，最顶是n
-        /// </summary>
-        /// <param name="map"></param>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public ILayer SelectLayerByID(IMap map, int id)
-        {
-            return map.Layer[id];
         }
 
         /// <summary>
@@ -183,7 +173,7 @@ namespace Sort3DPoints
             IFieldsEdit fieldsEdit = new FieldsClass();
             // AddField()反射不出来智能提示
             // CreateGemetryField()方法创建一个Shape字段  (*必须，而OBJECTID则不必须)
-            fieldsEdit.AddField(CreateGeometryField("Point"));
+            fieldsEdit.AddField(CreateGeometryField());
             
             // 要素类名称不能和要素数据集名称一致
             IFeatureClass featureClass =
@@ -205,26 +195,25 @@ namespace Sort3DPoints
         /// <param name="tin"></param>
         /// <param name="pts"></param>
         /// <returns></returns>
-        public IPoint CalcHeightOnce(ITin tin, List<IPoint> pts)
+        public IPoint CalcElevationOnce(ITin tin, List<IPoint> pts)
         {
             ITinSurface2 surface = tin as ITinSurface2;
 
             // 重要：清除排序依据的List
-            orderByHeight.Clear();
+            orderByElevation.Clear();
 
-            // 计算每个点到Tin的距离
-            for (int i = 0; i < pts.Count; i++)
+            foreach (IPoint pt in pts)
             {
-                orderByHeight.Add(
+                orderByElevation.Add(
                     Math.Abs(
-                        surface.GetElevation(pts[i]) 
-                        - 
-                        pts[i].Z
+                        surface.GetElevation(pt)
+                        -
+                        pt.Z
                     )
                 );
             }
 
-            return pts[orderByHeight.IndexOf(orderByHeight.Max())];
+            return pts[orderByElevation.IndexOf(orderByElevation.Max())];
             // 注意：删除最大点的操作在外部，不应由此处删除
         }
 
@@ -267,11 +256,10 @@ namespace Sort3DPoints
 
             orderByDistance.Clear();
 
-            for (int i = 0; i < pts.Count; i++)
+            foreach (IPoint pt in pts)
             {
-                ITinTriangle tinTria = tinAdvanced.FindTriangle(pts[i]);
-                Tetrahedron tetra = new Tetrahedron(tinTria, pts[i]);
-
+                ITinTriangle tinTria = tinAdvanced.FindTriangle(pt);
+                Tetrahedron tetra = new Tetrahedron(tinTria, pt);
                 orderByDistance.Add(tetra.Height);
             }
 
@@ -295,7 +283,7 @@ namespace Sort3DPoints
                 tinEdit.AddPointZ(pt, 0);
             }
             
-            tinEdit.SaveAs(@"D:\tintemp", true);
+            tinEdit.SaveAs(@"C:\Users\C\Documents\ArcGIS\tintemp", true);
             tinEdit.Refresh();
 
             return tinEdit as ITin;
@@ -319,38 +307,38 @@ namespace Sort3DPoints
         /// <summary>
         /// 根据给定文本信息（几何类型）创建几何字段
         /// </summary>
-        /// <param name="projection"></param>
-        /// <param name="geometryType"></param>
         /// <returns></returns>
-        private IField CreateGeometryField(string geometryType)
+        private IField CreateGeometryField()
         {
             // 创建几何定义
             IGeometryDef geometryDef = new GeometryDef();
             IGeometryDefEdit geometryDefEdit = geometryDef as IGeometryDefEdit;
+                             geometryDefEdit.HasZ_2 = true;
+                             geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPoint;
 
-            geometryDefEdit.HasM_2 = false;
-            geometryDefEdit.HasZ_2 = true;
+            #region 判断几何类型
+            // // 赋予几何类型
+            //switch (geometryType)
+            //{
+            //    case "Point":
+            //        geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPoint;
+            //        break;
+            //    case "Polyline":
+            //        geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolyline;
+            //        break;
+            //    case "Polygon":
+            //        geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolygon;
+            //        break;
+            //}
+            //
 
-            // 赋予几何类型
-            switch (geometryType)
-            {
-                case "Point":
-                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPoint;
-                    break;
-                case "Polyline":
-                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolyline;
-                    break;
-                case "Polygon":
-                    geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolygon;
-                    break;
-            }
-
+            #endregion
 
             // 创建字段
             IField geometryField = new Field();
             IFieldEdit geometryFieldEdit = geometryField as IFieldEdit;
-            geometryFieldEdit.Name_2 = "Shape";// 字段名按惯例叫Shape即可，与CreateFeatureClass中必须一致
-            geometryFieldEdit.Type_2 = esriFieldType.esriFieldTypeGeometry;// 字段类型Geometry
+            geometryFieldEdit.Name_2 = "Shape"; // 字段名按惯例叫Shape即可，与CreateFeatureClass()中必须一致
+            geometryFieldEdit.Type_2 = esriFieldType.esriFieldTypeGeometry; // 字段类型Geometry
             geometryFieldEdit.GeometryDef_2 = geometryDef;
 
             return geometryField;

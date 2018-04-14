@@ -123,6 +123,7 @@
     <Compile Include="src\class\DataProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\class\Tetrahedron.cs" />
+    <Compile Include="src\enum\CalcMethod.cs" />
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="Config.esriaddinx">

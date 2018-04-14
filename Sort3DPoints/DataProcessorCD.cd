@@ -3,7 +3,7 @@
   <Class Name="Sort3DPoints.DataProcessor">
     <Position X="0.5" Y="0.5" Width="6.75" />
     <TypeIdentifier>
-      <HashCode>BABAIAAAACAAACAACQACAAgAAQCFAAAggAAIAIAIABA=</HashCode>
+      <HashCode>FABAAAAAAAAAACAACAACAAgAAQCEAAAggAAIEIAIABA=</HashCode>
       <FileName>src\class\DataProcessor.cs</FileName>
     </TypeIdentifier>
   </Class>
