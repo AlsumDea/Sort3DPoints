@@ -1,0 +1,16 @@
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\TinGrowthAnimation.dll
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\TinGrowthAnimation.pdb
+D:\Code\Sort3DPoints\TinGrowthAnimation\obj\Debug\TinGrowthAnimation.csprojResolveAssemblyReference.cache
+D:\Code\Sort3DPoints\TinGrowthAnimation\obj\Debug\TinGrowthAnimation.dll
+D:\Code\Sort3DPoints\TinGrowthAnimation\obj\Debug\TinGrowthAnimation.pdb
+D:\Code\Sort3DPoints\TinGrowthAnimation\obj\Debug\TinGrowthAnimation.OperationPanel.resources
+D:\Code\Sort3DPoints\TinGrowthAnimation\obj\Debug\TinGrowthAnimation.csproj.GenerateResource.Cache
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\ESRI.ArcGIS.Carto.dll
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\ESRI.ArcGIS.Geodatabase.dll
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\ESRI.ArcGIS.Geometry.dll
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\ESRI.ArcGIS.Carto.xml
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\ESRI.ArcGIS.Geodatabase.xml
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\ESRI.ArcGIS.Geometry.xml
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\ESRI.ArcGIS.DataSourcesGDB.dll
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\ESRI.ArcGIS.DataSourcesGDB.xml
+D:\Code\Sort3DPoints\TinGrowthAnimation\bin\Debug\TinGrowthAnimation.esriAddIn

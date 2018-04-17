@@ -1,0 +1,32 @@
+﻿<ESRI.Configuration xmlns="http://schemas.esri.com/Desktop/AddIns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>Tin生长动画</Name>
+  <AddInID>{4a2ef191-af88-4dfe-9f5e-20b9494f3f37}</AddInID>
+  <Description>给定步长，从排序结果中逐渐生成Tin</Description>
+  <Version>1.0</Version>
+  <Image>Images\TinGrowthAnimation.png</Image>
+  <Author>C</Author>
+  <Company></Company>
+  <Date>4/17 周二</Date>
+  <Targets>
+    <Target name="Desktop" version="10.4" />
+  </Targets>
+  <AddIn language="CLR" library="TinGrowthAnimation.dll" namespace="TinGrowthAnimation">
+    <ArcScene>
+      <Commands>
+        <Button id="TinGrowthAnimation_btn_CallDockableWindow" class="btn_CallDockableWindow" message="打开操作面板，允许用户输入步长从而进行生长动画" caption="CallDockableWindow" tip="打开操作面板" category="呼出浮动窗" image="Images\btn_CallDockableWindow.png" />
+      </Commands>
+      <DockableWindows>
+        <DockableWindow id="TinGrowthAnimation_OperationPanel" class="OperationPanel+AddinImpl" caption="动画操作面板" image="Images\OperationPanel.png">
+          <InitialPlacement height="500" width="300" state="pinned" position="left" />
+        </DockableWindow>
+      </DockableWindows>
+      <Toolbars>
+        <Toolbar id="Holder" caption="呼叫按钮的工具条">
+          <Items>
+            <Button refID="TinGrowthAnimation_btn_CallDockableWindow" />
+          </Items>
+        </Toolbar>
+      </Toolbars>
+    </ArcScene>
+  </AddIn>
+</ESRI.Configuration>
