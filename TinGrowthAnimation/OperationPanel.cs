@@ -154,7 +154,7 @@ namespace TinGrowthAnimation
             nowSceneActiveView = nowScene as IActiveView;
             if (featureLayer != null && tinPath != null && tinNameExt != null)
             {
-                int from = 200;
+                int from = 19;
                 tinNext = dp.CreateFirstTin(featureLayer.FeatureClass, featureLayer.AreaOfInterest, tinPath, from);
                 tinLayer.Name = tinNameExt;
                 tinLayer.Dataset = tinNext;
@@ -173,6 +173,7 @@ namespace TinGrowthAnimation
             }
         }
 
+        [Obsolete("不再使用了", true)]
         private void doNext(ITin tinNext, IFeatureClass featureClass, ITinLayer tinLayer, IActiveView nowSceneActiveView, int from, int step)
         {
             IFeatureCursor featureCursor = featureClass.Search(new QueryFilterClass(), true);
